@@ -91,8 +91,9 @@ app.post('/auth/login', async (req, res) => {
     const token = jwt.sign({ schoolId: school.school_id }, JWT_SECRET, { expiresIn: '1d' });
     res.setHeader('Set-Cookie', cookie.serialize('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
+      path: '/',
       maxAge: 60 * 60 * 24 // 1日
     }));
     res.json({ success: true, schoolId: school.school_id });
