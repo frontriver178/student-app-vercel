@@ -2,10 +2,11 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
-import session from 'express-session';
 import bcrypt from 'bcrypt';
 import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
+import cookie from 'cookie';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 const PORT = process.env.PORT || 3004;
@@ -20,44 +21,38 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-// セッション設定
+const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret';
+
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24 // 24時間
-  }
-}));
-
-// リクエストログ（動作確認用）
-app.use((req, res, next) => {
-  console.log(`▶ ${req.method} ${req.url}  sessionID=${req.sessionID}  schoolId=${req.session.schoolId}`);
-  next();
-});
-
-// ミドルウェア
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// 認証チェック用ミドルウェア
-const ensureLoggedIn = (req, res, next) => {
-  if (req.session.schoolId) {
-    return next();
+// JWT認証ミドルウェア
+function ensureLoggedIn(req, res, next) {
+  const cookies = cookie.parse(req.headers.cookie || '');
+  const token = cookies.token;
+  if (!token) return res.status(401).json({ error: '未ログイン' });
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.schoolId = payload.schoolId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: '認証エラー' });
   }
-  return res.status(401).send('ログインが必要です');
-};
+}
 
 const ensureLoggedInRedirect = (req, res, next) => {
-  if (req.session.schoolId) {
-    return next();
+  const cookies = cookie.parse(req.headers.cookie || '');
+  const token = cookies.token;
+  if (!token) return res.redirect('/login.html');
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.schoolId = payload.schoolId;
+    next();
+  } catch (err) {
+    return res.redirect('/login.html');
   }
-  return res.redirect('/login.html');
 };
 
 // ルーティング
@@ -68,57 +63,36 @@ app.get('/', ensureLoggedInRedirect, (req, res) => {
 // 認証関連のエンドポイント
 app.post('/auth/login', async (req, res) => {
   const { schoolId, password } = req.body;
-  
   try {
     console.log('Login attempt for schoolId:', schoolId);
-    
     // Supabaseから学校データを取得
     const { data: school, error } = await supabase
       .from('schools')
       .select('*')
       .eq('school_id', schoolId)
-      .maybeSingle();  // single()の代わりにmaybeSingle()を使用
-
+      .maybeSingle();
     if (error) {
       console.error('Supabase error:', error);
       return res.status(500).json({ error: 'データベースエラーが発生しました', details: error });
     }
-
     if (!school) {
       console.log('No matching school found');
       return res.status(401).json({ error: 'ログインに失敗しました（塾IDまたはパスワードが間違っています）' });
     }
-
     const passwordMatch = await bcrypt.compare(password, school.password);
     if (!passwordMatch) {
       console.log('Password does not match');
       return res.status(401).json({ error: 'ログインに失敗しました（塾IDまたはパスワードが間違っています）' });
     }
-
-    // セッション再生成
-    req.session.regenerate(err => {
-      if (err) {
-        console.error('Session regenerate error:', err);
-        return res.status(500).json({ error: 'セッション再生成に失敗しました', details: err });
-      }
-
-      // 新しいセッションに学校IDをセット
-      req.session.schoolId = school.school_id;
-      console.log('Session schoolId set:', req.session.schoolId);
-
-      // 保存してからJSONレスポンスを返す
-      req.session.save(err => {
-        if (err) {
-          console.error('Session save error:', err);
-          return res.status(500).json({ error: 'セッション保存に失敗しました', details: err });
-        }
-        res.json({ 
-          success: true,
-          sessionId: req.sessionID,
-          schoolId: school.school_id
-        });
-      });
-    });
+    // JWT発行
+    const token = jwt.sign({ schoolId: school.school_id }, JWT_SECRET, { expiresIn: '1d' });
+    res.setHeader('Set-Cookie', cookie.serialize('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 // 1日
+    }));
+    res.json({ success: true, schoolId: school.school_id });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ 
@@ -130,15 +104,25 @@ app.post('/auth/login', async (req, res) => {
 });
 
 app.get('/auth/status', (req, res) => {
-  res.json({
-    sessionID: req.sessionID,
-    schoolId: req.session.schoolId,
-    loggedIn: !!req.session.schoolId
-  });
+  const cookies = cookie.parse(req.headers.cookie || '');
+  const token = cookies.token;
+  if (!token) return res.json({ loggedIn: false });
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    res.json({ loggedIn: true, schoolId: payload.schoolId });
+  } catch (err) {
+    res.json({ loggedIn: false });
+  }
 });
 
 app.get('/auth/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/login.html'));
+  res.setHeader('Set-Cookie', cookie.serialize('token', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 0
+  }));
+  res.redirect('/login.html');
 });
 
 // 生徒データ関連のエンドポイント
