@@ -5,7 +5,9 @@ let recentRecordsList;
 // 認証状態を確認する関数
 async function checkAuth() {
   try {
-    const response = await fetch('/auth/status');
+    const response = await fetch('/auth/status', {
+      credentials: 'include'  // クッキーを送信するために追加
+    });
     const data = await response.json();
     console.log('Auth status:', data);
     return data.loggedIn && data.schoolId;
@@ -55,7 +57,9 @@ window.onload = async () => {
   if (logoutButton) {
     logoutButton.onclick = async () => {
       console.log('logoutButton clicked');
-      await fetch('/auth/logout');
+      await fetch('/auth/logout', {
+        credentials: 'include'  // クッキーを送信するために追加
+      });
       localStorage.removeItem('loggedIn');
       localStorage.removeItem('schoolId');
       document.body.style.display = 'none';
@@ -158,7 +162,9 @@ async function loadStudents() {
   try {
     console.log('loadStudents called');
     console.log('schoolId:', schoolId);
-    const res = await fetch('/students');
+    const res = await fetch('/students', {
+      credentials: 'include'  // クッキーを送信するために追加
+    });
     if (!res.ok) {
       const errorText = await res.text();
       console.error('API error response:', errorText);
