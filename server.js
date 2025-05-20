@@ -129,7 +129,7 @@ app.get('/auth/logout', (req, res) => {
   res.redirect('/login.html');
 });
 
-// 生徒一覧取得
+// 生徒一覧取得（recordsもJOIN）
 app.get('/students', ensureLoggedIn, async (req, res) => {
   try {
     console.log('GET /students called with schoolId:', req.schoolId);
@@ -143,12 +143,15 @@ app.get('/students', ensureLoggedIn, async (req, res) => {
       return res.status(400).json({ error: '塾情報が見つかりません' });
     }
     const schoolDbId = school.id;
+    // studentsとrecordsをJOIN
     const { data: students, error } = await supabase
       .from('students')
-      .select('*')
+      .select('*,records(*)')
       .eq('school_id', schoolDbId);
     if (error) throw error;
-    res.json(students || []);
+    // recordsがnullの場合は空配列に
+    const studentsWithRecords = (students || []).map(s => ({ ...s, records: s.records || [] }));
+    res.json(studentsWithRecords);
   } catch (error) {
     console.error('GET /students error:', error);
     res.status(500).json({ error: String(error) });
@@ -258,28 +261,42 @@ app.put('/students/:id', ensureLoggedIn, async (req, res) => {
   }
 });
 
-// 指導記録を追加
-app.post('/students/:id/records', (req, res) => {
-    try {
-        const students = loadStudents();
-        const student = students.find(s => s.id === req.params.id);
-        if (student) {
-            const record = {
-                id: Date.now().toString(),
-                date: new Date().toISOString(),
-                content: req.body.content,
-                teacher: req.body.teacher
-            };
-            student.records.push(record);
-            saveStudents(students);
-            res.json(record);
-        } else {
-            res.status(404).json({ error: '生徒が見つかりません' });
-        }
-    } catch (error) {
-        console.error('Error in POST /students/:id/records:', error);
-        res.status(500).json({ error: '指導記録の追加に失敗しました' });
+// 指導記録一覧取得
+app.get('/students/:id/records', ensureLoggedIn, async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    const { data: records, error } = await supabase
+      .from('records')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('date', { ascending: false });
+    if (error) throw error;
+    res.json(records || []);
+  } catch (error) {
+    console.error('GET /students/:id/records error:', error);
+    res.status(500).json({ error: String(error) });
+  }
+});
+
+// 指導記録追加
+app.post('/students/:id/records', ensureLoggedIn, async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    const { content, teacher } = req.body;
+    if (!content) {
+      return res.status(400).json({ error: '内容を入力してください' });
     }
+    const { data, error } = await supabase
+      .from('records')
+      .insert([{ student_id: studentId, content, teacher }])
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('POST /students/:id/records error:', error);
+    res.status(500).json({ error: String(error) });
+  }
 });
 
 // 参考書を追加
