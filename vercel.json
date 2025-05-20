@@ -16,6 +16,14 @@
       "dest": "server.js"
     },
     {
+      "src": "/schools",
+      "dest": "server.js"
+    },
+    {
+      "src": "/schools/(.*)",
+      "dest": "server.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "server.js"
     },
