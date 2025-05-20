@@ -126,18 +126,28 @@ app.get('/auth/logout', (req, res) => {
 });
 
 // 生徒データ関連のエンドポイント
-app.get('/students', ensureLoggedIn, (req, res) => {
-    try {
-        console.log('GET /students called, schoolId:', req.session.schoolId);
-        const students = loadStudents();
-        console.log('Loaded students:', students);
-        const filtered = students.filter(s => s.schoolId === req.session.schoolId);
-        console.log('Filtered students:', filtered);
-        res.json(filtered);
-    } catch (error) {
-        console.error('Error in GET /students:', error);
-        res.status(500).json({ error: '生徒データの取得に失敗しました' });
+app.get('/students', ensureLoggedIn, async (req, res) => {
+  try {
+    // req.schoolIdはschool_id（文字列）なので、まずschoolsテーブルからidを取得
+    const { data: school, error: schoolError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('school_id', req.schoolId)
+      .maybeSingle();
+    if (schoolError || !school) {
+      return res.status(400).json({ error: '塾情報が見つかりません' });
     }
+    const schoolDbId = school.id;
+    // studentsテーブルから該当塾の生徒を取得
+    const { data: students, error } = await supabase
+      .from('students')
+      .select('*')
+      .eq('school_id', schoolDbId);
+    if (error) throw error;
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ error: String(error) });
+  }
 });
 
 const filePath = './public/students.json';
