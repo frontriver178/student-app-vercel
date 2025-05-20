@@ -77,50 +77,55 @@ app.post('/auth/login', async (req, res) => {
       .from('schools')
       .select('*')
       .eq('school_id', schoolId)
-      .single();
+      .maybeSingle();  // single()の代わりにmaybeSingle()を使用
 
     if (error) {
       console.error('Supabase error:', error);
-      return res.status(500).send('データベースエラーが発生しました');
+      return res.status(500).json({ error: 'データベースエラーが発生しました', details: error });
     }
 
     if (!school) {
       console.log('No matching school found');
-      return res.status(400).send('ログインに失敗しました');
+      return res.status(401).json({ error: 'ログインに失敗しました（塾IDまたはパスワードが間違っています）' });
     }
 
     const passwordMatch = await bcrypt.compare(password, school.password);
     if (!passwordMatch) {
       console.log('Password does not match');
-      return res.status(400).send('ログインに失敗しました');
+      return res.status(401).json({ error: 'ログインに失敗しました（塾IDまたはパスワードが間違っています）' });
     }
 
     // セッション再生成
     req.session.regenerate(err => {
       if (err) {
         console.error('Session regenerate error:', err);
-        return res.status(500).send('セッション再生成に失敗しました');
+        return res.status(500).json({ error: 'セッション再生成に失敗しました', details: err });
       }
 
       // 新しいセッションに学校IDをセット
-      req.session.schoolId = school.schoolId;
+      req.session.schoolId = school.school_id;
+      console.log('Session schoolId set:', req.session.schoolId);
 
       // 保存してからJSONレスポンスを返す
       req.session.save(err => {
         if (err) {
           console.error('Session save error:', err);
-          return res.status(500).send('セッション保存に失敗しました');
+          return res.status(500).json({ error: 'セッション保存に失敗しました', details: err });
         }
         res.json({ 
           success: true,
           sessionId: req.sessionID,
-          schoolId: req.session.schoolId
+          schoolId: school.school_id
         });
       });
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'ログイン処理中にエラーが発生しました', error: String(error), stack: error.stack });
+    res.status(500).json({ 
+      error: 'ログイン処理中にエラーが発生しました',
+      details: String(error),
+      stack: error.stack 
+    });
   }
 });
 

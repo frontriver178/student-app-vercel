@@ -1,10 +1,10 @@
 -- 塾アカウント
 CREATE TABLE schools (
     id SERIAL PRIMARY KEY,
-    school_id VARCHAR(64) UNIQUE NOT NULL,
+    school_id VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    password TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 生徒
@@ -47,9 +47,9 @@ CREATE TABLE admins (
 );
 
 -- 塾アカウント（パスワードは「testpass」をbcryptでハッシュ化した例）
-INSERT INTO schools (school_id, name, password_hash) VALUES
-  ('naseva', 'ナセバ進学予備校', '$2b$10$E5OImHLs8jhhW3hwK68nke8JkiQwcIAjQQJM6MAJBobYvY4tY1bZu'),
-  ('front', 'コンソメ塾', '$2b$10$E5OImHLs8jhhW3hwK68nke8JkiQwcIAjQQJM6MAJBobYvY4tY1bZu');
+INSERT INTO schools (school_id, name, password) VALUES
+  ('naseva', 'ナセバ進学予備校', '$2b$10$4bDgqOBG1sg8Cd7oRa74q.fQ4xfKzf4QrIWPuCiprg5PEeIHAjHpO'),
+  ('front', 'コンソメ塾', '$2b$10$WrzYGECP1xRdtCblJjSDAe/89pqTYAFxcaxLTmfL8YJmM/9DunCbm');
 
 -- 生徒
 INSERT INTO students (school_id, name, grade, subject, memo) VALUES
