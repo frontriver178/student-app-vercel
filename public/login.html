@@ -99,40 +99,13 @@
 
         const data = await response.json();
         console.log('ログインレスポンスデータ:', data);
-        if (data.success && data.sessionId && data.schoolId) {
-          console.log('セッション保存待機開始');
-          // セッションの保存を待つため、少し長めの待機時間を設定
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          console.log('セッション保存待機完了');
-          
-          // セッションの状態を確認
-          console.log('セッション状態確認開始');
-          const statusResponse = await fetch('/auth/status');
-          console.log('セッション状態レスポンス:', statusResponse.status);
-          if (statusResponse.ok) {
-            const statusData = await statusResponse.json();
-            console.log('セッション状態データ:', statusData);
-            
-            if (statusData.loggedIn && statusData.schoolId === data.schoolId) {
-              console.log('リダイレクト実行');
-              // ローカルストレージに保存
-              localStorage.setItem('loggedIn', 'true');
-              localStorage.setItem('schoolId', data.schoolId);
-              console.log('localStorage set: loggedIn=true, schoolId=' + data.schoolId);
-              window.location.href = '/';
-              return false;
-            } else {
-              console.error('セッション確認失敗:', statusData);
-              errorDiv.textContent = 'セッションの確認に失敗しました。もう一度お試しください。';
-              errorDiv.style.display = 'block';
-            }
-          } else {
-            console.error('セッション状態確認エラー:', statusResponse.status);
-            errorDiv.textContent = 'セッションの確認に失敗しました。もう一度お試しください。';
-            errorDiv.style.display = 'block';
-          }
+        if (data.success && data.schoolId) {
+          // ローカルストレージに保存
+          localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('schoolId', data.schoolId);
+          window.location.href = '/';
+          return false;
         } else {
-          console.error('ログインレスポンス不正:', data);
           errorDiv.textContent = 'ログインに失敗しました。もう一度お試しください。';
           errorDiv.style.display = 'block';
         }
