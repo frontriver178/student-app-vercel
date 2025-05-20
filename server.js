@@ -114,7 +114,7 @@ app.post('/auth/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).send('ログイン処理中にエラーが発生しました');
+    res.status(500).json({ message: 'ログイン処理中にエラーが発生しました', error: String(error), stack: error.stack });
   }
 });
 
