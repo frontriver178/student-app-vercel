@@ -446,35 +446,34 @@ app.delete('/students/:studentId/records/:recordId', (req, res) => {
 });
 
 // 塾アカウント一覧取得
-app.get('/schools', (req, res) => {
-    try {
-        const schools = loadSchools();
-        res.json(schools);
-    } catch (error) {
-        res.status(500).json({ error: '塾アカウントの取得に失敗しました' });
-    }
+app.get('/schools', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('schools').select('school_id, name');
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: String(error) });
+  }
 });
 
 // 塾アカウント新規発行
 app.post('/schools', async (req, res) => {
-    try {
-        const schools = loadSchools();
-        const { schoolId, password, name } = req.body;
-        if (!schoolId || !password || !name) {
-            return res.status(400).json({ error: '全ての項目を入力してください' });
-        }
-        if (schools.find(s => s.schoolId === schoolId)) {
-            return res.status(400).json({ error: '同じ塾IDが既に存在します' });
-        }
-        // パスワードをハッシュ化
-        const hash = await bcrypt.hash(password, 10);
-        const newSchool = { schoolId, password: hash, name };
-        schools.push(newSchool);
-        saveSchools(schools);
-        res.json(newSchool);
-    } catch (error) {
-        res.status(500).json({ error: '塾アカウントの発行に失敗しました' });
+  try {
+    const { school_id, password, name } = req.body;
+    if (!school_id || !password || !name) {
+      return res.status(400).json({ error: '全ての項目を入力してください' });
     }
+    // パスワードをハッシュ化
+    const hash = await bcrypt.hash(password, 10);
+    const { data, error } = await supabase
+      .from('schools')
+      .insert([{ school_id, password: hash, name }])
+      .select('school_id, name');
+    if (error) throw error;
+    res.json(data[0]);
+  } catch (error) {
+    res.status(500).json({ error: String(error) });
+  }
 });
 
 // 塾アカウント削除
