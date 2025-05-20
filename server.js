@@ -76,7 +76,7 @@ app.post('/auth/login', async (req, res) => {
     const { data: school, error } = await supabase
       .from('schools')
       .select('*')
-      .eq('schoolId', schoolId)
+      .eq('school_id', schoolId)
       .single();
 
     if (error) {
