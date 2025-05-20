@@ -17,7 +17,7 @@ const supabase = createClient(
 // セッション設定
 app.use(cookieParser());
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -41,22 +41,16 @@ app.use(express.static('public'));
 
 // 認証チェック用ミドルウェア
 const ensureLoggedIn = (req, res, next) => {
-  console.log('Checking auth:', { sessionID: req.sessionID, schoolId: req.session.schoolId });
   if (req.session.schoolId) {
-    console.log('Auth success:', req.session.schoolId);
     return next();
   }
-  console.log('Auth failed: no schoolId in session');
   return res.status(401).send('ログインが必要です');
 };
 
 const ensureLoggedInRedirect = (req, res, next) => {
-  console.log('Checking auth for redirect:', { sessionID: req.sessionID, schoolId: req.session.schoolId });
   if (req.session.schoolId) {
-    console.log('Auth success for redirect:', req.session.schoolId);
     return next();
   }
-  console.log('Auth failed for redirect: redirecting to login.html');
   return res.redirect('/login.html');
 };
 
@@ -70,7 +64,7 @@ app.post('/auth/login', async (req, res) => {
   const { schoolId, password } = req.body;
   
   try {
-    console.log('POST /auth/login', { schoolId });
+    console.log('Login attempt for schoolId:', schoolId);
     
     // Supabaseから学校データを取得
     const { data: school, error } = await supabase
@@ -79,13 +73,17 @@ app.post('/auth/login', async (req, res) => {
       .eq('schoolId', schoolId)
       .single();
 
-    if (error || !school) {
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).send('データベースエラーが発生しました');
+    }
+
+    if (!school) {
       console.log('No matching school found');
       return res.status(400).send('ログインに失敗しました');
     }
 
     const passwordMatch = await bcrypt.compare(password, school.password);
-    console.log('Password match:', passwordMatch);
     if (!passwordMatch) {
       console.log('Password does not match');
       return res.status(400).send('ログインに失敗しました');
@@ -100,7 +98,6 @@ app.post('/auth/login', async (req, res) => {
 
       // 新しいセッションに学校IDをセット
       req.session.schoolId = school.schoolId;
-      console.log('▶ Session schoolId set:', req.session.schoolId);
 
       // 保存してからJSONレスポンスを返す
       req.session.save(err => {
@@ -108,7 +105,6 @@ app.post('/auth/login', async (req, res) => {
           console.error('Session save error:', err);
           return res.status(500).send('セッション保存に失敗しました');
         }
-        console.log('▶ Session saved, ID=', req.sessionID);
         res.json({ 
           success: true,
           sessionId: req.sessionID,
@@ -123,13 +119,11 @@ app.post('/auth/login', async (req, res) => {
 });
 
 app.get('/auth/status', (req, res) => {
-  const sessionInfo = {
+  res.json({
     sessionID: req.sessionID,
     schoolId: req.session.schoolId,
     loggedIn: !!req.session.schoolId
-  };
-  console.log('→ GET /auth/status', sessionInfo);
-  res.json(sessionInfo);
+  });
 });
 
 app.get('/auth/logout', (req, res) => {
@@ -496,3 +490,6 @@ app.delete('/schools/:schoolId', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
+
+// Vercel用のエクスポート
+module.exports = app;
