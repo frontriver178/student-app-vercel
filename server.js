@@ -477,19 +477,18 @@ app.post('/schools', async (req, res) => {
 });
 
 // 塾アカウント削除
-app.delete('/schools/:schoolId', (req, res) => {
-    try {
-        const schools = loadSchools();
-        const idx = schools.findIndex(s => s.schoolId === req.params.schoolId);
-        if (idx === -1) {
-            return res.status(404).json({ error: '塾IDが見つかりません' });
-        }
-        schools.splice(idx, 1);
-        saveSchools(schools);
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ error: '塾アカウントの削除に失敗しました' });
+app.delete('/schools/:school_id', async (req, res) => {
+  try {
+    const { school_id } = req.params;
+    if (!school_id) {
+      return res.status(400).json({ error: 'school_id is required' });
     }
+    const { error } = await supabase.from('schools').delete().eq('school_id', school_id);
+    if (error) throw error;
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: String(error) });
+  }
 });
 
 app.listen(PORT, () => {

@@ -17,9 +17,9 @@ async function loadSchools() {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${school.name}</td>
-        <td>${school.schoolId}</td>
+        <td>${school.school_id}</td>
         <td>${school.password}</td>
-        <td><button class="delete-button" onclick="deleteSchool('${school.schoolId}')">削除</button></td>
+        <td><button class="delete-button" onclick="deleteSchool('${school.school_id}')">削除</button></td>
       `;
       tableBody.appendChild(tr);
     });
@@ -46,7 +46,7 @@ addButton.onclick = async () => {
     const res = await fetch('/schools', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, schoolId, password })
+      body: JSON.stringify({ name, school_id: schoolId, password })
     });
     if (res.ok) {
       successMessage.textContent = '塾アカウントを発行しました。';
