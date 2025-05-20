@@ -1,4 +1,6 @@
 -- 塾アカウント
+DROP TABLE IF EXISTS schools CASCADE;
+
 CREATE TABLE schools (
     id SERIAL PRIMARY KEY,
     school_id VARCHAR(255) UNIQUE NOT NULL,
@@ -72,4 +74,6 @@ INSERT INTO textbooks (student_id, title, total_pages, current_page, progress) V
 
 -- 管理者
 INSERT INTO admins (username, password_hash) VALUES
-  ('admin', '$2b$10$E5OImHLs8jhhW3hwK68nke8JkiQwcIAjQQJM6MAJBobYvY4tY1bZu'); 
+  ('admin', '$2b$10$E5OImHLs8jhhW3hwK68nke8JkiQwcIAjQQJM6MAJBobYvY4tY1bZu');
+
+SELECT id, school_id, name FROM schools; 
