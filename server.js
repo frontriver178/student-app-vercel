@@ -128,39 +128,25 @@ app.get('/auth/logout', (req, res) => {
   res.redirect('/login.html');
 });
 
-// 生徒データ関連のエンドポイント
+// 生徒一覧取得
 app.get('/students', ensureLoggedIn, async (req, res) => {
   try {
     console.log('GET /students called with schoolId:', req.schoolId);
-    // req.schoolIdはschool_id（文字列）なので、まずschoolsテーブルからidを取得
     const { data: school, error: schoolError } = await supabase
       .from('schools')
       .select('id')
       .eq('school_id', req.schoolId)
       .maybeSingle();
-
-    console.log('Schools query result:', { school, error: schoolError });
-    
     if (schoolError || !school) {
       console.error('School lookup error:', schoolError);
       return res.status(400).json({ error: '塾情報が見つかりません' });
     }
-    
     const schoolDbId = school.id;
-    console.log('Found school.id:', schoolDbId);
-    
-    // studentsテーブルから該当塾の生徒を取得
     const { data: students, error } = await supabase
       .from('students')
       .select('*')
       .eq('school_id', schoolDbId);
-
-    console.log('Students query result:', { count: students?.length, error });
-    
-    if (error) {
-      console.error('Students lookup error:', error);
-      throw error;
-    }
+    if (error) throw error;
     res.json(students || []);
   } catch (error) {
     console.error('GET /students error:', error);
@@ -168,148 +154,107 @@ app.get('/students', ensureLoggedIn, async (req, res) => {
   }
 });
 
-const filePath = './public/students.json';
-const schoolsFilePath = './public/schools.json';
-
-// 生徒データを読み込む関数
-function loadStudents() {
-    try {
-        if (!fs.existsSync(filePath)) {
-            // ファイルが存在しない場合は空の配列を保存
-            fs.writeFileSync(filePath, JSON.stringify([], null, 2));
-            return [];
-        }
-        const data = fs.readFileSync(filePath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error loading students:', error);
-        return [];
+// 生徒追加
+app.post('/students', ensureLoggedIn, async (req, res) => {
+  try {
+    const { name, grade, subject, memo } = req.body;
+    if (!name || !grade || !subject) {
+      return res.status(400).json({ error: '全ての項目を入力してください' });
     }
-}
-
-// 生徒データを保存する関数
-function saveStudents(students) {
-    try {
-        fs.writeFileSync(filePath, JSON.stringify(students, null, 2), 'utf8');
-    } catch (error) {
-        console.error('Error saving students:', error);
-        throw error;
+    // schoolIdはJWTから取得
+    const { data: school, error: schoolError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('school_id', req.schoolId)
+      .maybeSingle();
+    if (schoolError || !school) {
+      return res.status(400).json({ error: '塾情報が見つかりません' });
     }
-}
-
-// 塾アカウントを読み込む関数
-function loadSchools() {
-    try {
-        if (!fs.existsSync(schoolsFilePath)) {
-            fs.writeFileSync(schoolsFilePath, JSON.stringify([], null, 2));
-            return [];
-        }
-        const data = fs.readFileSync(schoolsFilePath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error loading schools:', error);
-        return [];
-    }
-}
-
-// 塾アカウントを保存する関数
-function saveSchools(schools) {
-    try {
-        fs.writeFileSync(schoolsFilePath, JSON.stringify(schools, null, 2), 'utf8');
-    } catch (error) {
-        console.error('Error saving schools:', error);
-        throw error;
-    }
-}
-
-// 特定の生徒を取得
-app.get('/students/:id', (req, res) => {
-    try {
-        const students = loadStudents();
-        const student = students.find(s => s.id === req.params.id);
-        if (student) {
-            res.json(student);
-        } else {
-            res.status(404).json({ error: '生徒が見つかりません' });
-        }
-    } catch (error) {
-        console.error('Error in GET /students/:id:', error);
-        res.status(500).json({ error: '生徒データの取得に失敗しました' });
-    }
+    const schoolDbId = school.id;
+    const { data, error } = await supabase
+      .from('students')
+      .insert([{ school_id: schoolDbId, name, grade, subject, memo }])
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('POST /students error:', error);
+    res.status(500).json({ error: String(error) });
+  }
 });
 
-// 新しい生徒を追加（schoolIdを付与）
-app.post('/students', (req, res) => {
-    try {
-        const students = loadStudents();
-        const { name, grade, subject, memo, schoolId } = req.body;
-        console.log('POST /students body:', req.body);
-        if (!name || !grade || !subject || !schoolId) {
-            console.log('Missing fields:', { name, grade, subject, schoolId });
-            return res.status(400).json({ error: '全ての項目を入力してください' });
-        }
-        const student = {
-            id: Date.now().toString(),
-            name,
-            grade,
-            subject,
-            memo: memo || '',
-            schoolId,
-            records: [],
-            textbooks: []
-        };
-        students.push(student);
-        saveStudents(students);
-        res.json(student);
-    } catch (error) {
-        console.error('Error in POST /students:', error);
-        res.status(500).json({ error: '生徒の追加に失敗しました' });
+// 生徒削除
+app.delete('/students/:id', ensureLoggedIn, async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    // schoolIdはJWTから取得
+    const { data: school, error: schoolError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('school_id', req.schoolId)
+      .maybeSingle();
+    if (schoolError || !school) {
+      return res.status(400).json({ error: '塾情報が見つかりません' });
     }
+    const schoolDbId = school.id;
+    // 生徒が該当塾のものかチェック
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('id, school_id')
+      .eq('id', studentId)
+      .maybeSingle();
+    if (studentError || !student || student.school_id !== schoolDbId) {
+      return res.status(404).json({ error: '生徒が見つかりません' });
+    }
+    const { error } = await supabase
+      .from('students')
+      .delete()
+      .eq('id', studentId);
+    if (error) throw error;
+    res.status(204).send();
+  } catch (error) {
+    console.error('DELETE /students error:', error);
+    res.status(500).json({ error: String(error) });
+  }
 });
 
-// 生徒削除（schoolIdチェック）
-app.delete('/students/:id', (req, res) => {
-    try {
-        const students = loadStudents();
-        const { id } = req.params;
-        const { schoolId } = req.query;
-        const index = students.findIndex(s => s.id === id && s.schoolId === schoolId);
-        if (index === -1) {
-            return res.status(404).json({ error: '生徒が見つかりません' });
-        }
-        students.splice(index, 1);
-        saveStudents(students);
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ error: '生徒の削除に失敗しました' });
-    }
-});
-
-// 生徒情報を更新（schoolIdチェック）
-app.put('/students/:id', (req, res) => {
+// 生徒情報更新
+app.put('/students/:id', ensureLoggedIn, async (req, res) => {
+  try {
     const studentId = req.params.id;
     const updatedData = req.body;
-    try {
-        const students = loadStudents();
-        const index = students.findIndex(s => s.id === studentId && s.schoolId === updatedData.schoolId);
-        if (index === -1) {
-            return res.status(404).json({ error: '生徒が見つかりません' });
-        }
-        const updatedStudent = {
-            ...students[index],
-            ...updatedData,
-            id: studentId,
-            records: students[index].records || [],
-            textbooks: students[index].textbooks || [],
-            schoolId: students[index].schoolId
-        };
-        students[index] = updatedStudent;
-        saveStudents(students);
-        res.json(updatedStudent);
-    } catch (error) {
-        console.error('Error updating student:', error);
-        res.status(500).json({ error: '生徒情報の更新に失敗しました' });
+    // schoolIdはJWTから取得
+    const { data: school, error: schoolError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('school_id', req.schoolId)
+      .maybeSingle();
+    if (schoolError || !school) {
+      return res.status(400).json({ error: '塾情報が見つかりません' });
     }
+    const schoolDbId = school.id;
+    // 生徒が該当塾のものかチェック
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('id, school_id')
+      .eq('id', studentId)
+      .maybeSingle();
+    if (studentError || !student || student.school_id !== schoolDbId) {
+      return res.status(404).json({ error: '生徒が見つかりません' });
+    }
+    const { data, error } = await supabase
+      .from('students')
+      .update(updatedData)
+      .eq('id', studentId)
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('PUT /students error:', error);
+    res.status(500).json({ error: String(error) });
+  }
 });
 
 // 指導記録を追加
