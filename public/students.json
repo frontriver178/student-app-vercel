@@ -1,0 +1,59 @@
+[
+  {
+    "id": "1747714864363",
+    "name": "表川知由",
+    "grade": "1",
+    "subject": "大阪大学",
+    "memo": "マモマモ",
+    "schoolId": "naseva",
+    "records": [
+      {
+        "id": "1747714881747",
+        "date": "2025-05-20T04:21:21.747Z",
+        "content": "青チャートの解説",
+        "teacher": "ヒカキン"
+      }
+    ],
+    "textbooks": []
+  },
+  {
+    "id": "1747714892418",
+    "name": "池田ことみ",
+    "grade": "1",
+    "subject": "大阪大学",
+    "memo": "",
+    "schoolId": "naseva",
+    "records": [],
+    "textbooks": []
+  },
+  {
+    "id": "1747714903297",
+    "name": "中西せな",
+    "grade": "1",
+    "subject": "神戸大学",
+    "memo": "",
+    "schoolId": "naseva",
+    "records": [],
+    "textbooks": []
+  },
+  {
+    "id": "1747714940224",
+    "name": "貝谷しょうすけ",
+    "grade": "3",
+    "subject": "神戸大学",
+    "memo": "メモ",
+    "schoolId": "naseva",
+    "records": [],
+    "textbooks": []
+  },
+  {
+    "id": "1747716073304",
+    "name": "福井拓磨",
+    "grade": "1",
+    "subject": "高千穂大学",
+    "memo": "テスト中",
+    "schoolId": "front",
+    "records": [],
+    "textbooks": []
+  }
+]

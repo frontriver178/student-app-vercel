@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>参考書進捗管理</title>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .back-button {
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .back-button:hover {
+            background-color: #555;
+        }
+        .student-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .student-info h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-item {
+            margin: 5px 0;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .textbook-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .textbook-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .textbook-list {
+            display: grid;
+            gap: 20px;
+        }
+        .textbook-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .textbook-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .textbook-title {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #eee;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            text-align: right;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .add-textbook-form {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .add-button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .add-button:hover {
+            background-color: #45a049;
+        }
+        .update-progress-form {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .update-progress-form input {
+            width: 80px;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .update-button {
+            padding: 4px 8px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .update-button:hover {
+            background-color: #1976D2;
+        }
+        .delete-button {
+            padding: 4px 8px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        .textbook-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .progress-input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .progress-input-group input {
+            width: 60px;
+            text-align: right;
+        }
+        .progress-input-group span {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button" onclick="location.href='index.html'">← 戻る</button>
+        
+        <div class="student-info">
+            <h2 id="student-name"></h2>
+            <div class="info-item">
+                <span class="info-label">学年：</span>
+                <span id="student-grade"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">志望校：</span>
+                <span id="student-subject"></span>
+            </div>
+        </div>
+
+        <div class="textbook-section">
+            <h3>参考書進捗</h3>
+            <div id="textbook-list" class="textbook-list"></div>
+
+            <div class="add-textbook-form">
+                <h4>新しい参考書を追加</h4>
+                <div class="form-group">
+                    <label for="textbook-title">参考書名</label>
+                    <input type="text" id="textbook-title" required>
+                </div>
+                <button class="add-button" onclick="addTextbook()">追加</button>
+            </div>
+        </div>
+    </div>
+    <script src="./textbook-progress.js"></script>
+</body>
+</html> 

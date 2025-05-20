@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進捗確認</title>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .back-button {
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .back-button:hover {
+            background-color: #555;
+        }
+        .progress-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .progress-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .progress-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .progress-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .progress-content {
+            margin-top: 8px;
+            white-space: pre-wrap;
+        }
+        .progress-teacher {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .student-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .student-info h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-item {
+            margin: 5px 0;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button" onclick="location.href='index.html'">← 戻る</button>
+        
+        <div class="student-info">
+            <h2 id="student-name"></h2>
+            <div class="info-item">
+                <span class="info-label">学年：</span>
+                <span id="student-grade"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">志望校：</span>
+                <span id="student-subject"></span>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <h3>指導記録</h3>
+            <div id="progress-list"></div>
+        </div>
+    </div>
+    <script src="./progress.js"></script>
+</body>
+</html> 

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ログイン</title>
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+    }
+    .login-form {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 0.25rem;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .error {
+      color: #dc2626;
+      margin-top: 1rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-form">
+    <h1>ログイン</h1>
+    <form id="loginForm" onsubmit="return handleLogin(event)">
+      <div class="form-group">
+        <label>塾ID：<input name="schoolId" required></label>
+      </div>
+      <div class="form-group">
+        <label>パスワード：<input name="password" type="password" required></label>
+      </div>
+      <button type="submit">ログイン</button>
+      <div id="error" class="error" style="display: none;"></div>
+    </form>
+  </div>
+
+  <script>
+    async function handleLogin(event) {
+      event.preventDefault();
+      const form = event.target;
+      const errorDiv = document.getElementById('error');
+      const submitButton = form.querySelector('button[type="submit"]');
+      
+      try {
+        console.log('ログイン処理開始');
+        submitButton.disabled = true;
+        const formData = new FormData(form);
+        console.log('ログインリクエスト送信');
+        const response = await fetch('/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams(formData).toString()
+        });
+
+        console.log('ログインレスポンス受信:', response.status);
+        if (!response.ok) {
+          const text = await response.text();
+          console.error('ログインエラー:', text);
+          errorDiv.textContent = text;
+          errorDiv.style.display = 'block';
+          return false;
+        }
+
+        const data = await response.json();
+        console.log('ログインレスポンスデータ:', data);
+        if (data.success && data.sessionId && data.schoolId) {
+          console.log('セッション保存待機開始');
+          // セッションの保存を待つため、少し長めの待機時間を設定
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          console.log('セッション保存待機完了');
+          
+          // セッションの状態を確認
+          console.log('セッション状態確認開始');
+          const statusResponse = await fetch('/auth/status');
+          console.log('セッション状態レスポンス:', statusResponse.status);
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            console.log('セッション状態データ:', statusData);
+            
+            if (statusData.loggedIn && statusData.schoolId === data.schoolId) {
+              console.log('リダイレクト実行');
+              // ローカルストレージに保存
+              localStorage.setItem('loggedIn', 'true');
+              localStorage.setItem('schoolId', data.schoolId);
+              console.log('localStorage set: loggedIn=true, schoolId=' + data.schoolId);
+              window.location.href = '/';
+              return false;
+            } else {
+              console.error('セッション確認失敗:', statusData);
+              errorDiv.textContent = 'セッションの確認に失敗しました。もう一度お試しください。';
+              errorDiv.style.display = 'block';
+            }
+          } else {
+            console.error('セッション状態確認エラー:', statusResponse.status);
+            errorDiv.textContent = 'セッションの確認に失敗しました。もう一度お試しください。';
+            errorDiv.style.display = 'block';
+          }
+        } else {
+          console.error('ログインレスポンス不正:', data);
+          errorDiv.textContent = 'ログインに失敗しました。もう一度お試しください。';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('ログイン処理エラー:', error);
+        errorDiv.textContent = 'ログイン処理中にエラーが発生しました';
+        errorDiv.style.display = 'block';
+      } finally {
+        submitButton.disabled = false;
+      }
+      return false;
+    }
+  </script>
+</body>
+</html> 

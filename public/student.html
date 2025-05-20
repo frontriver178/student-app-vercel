@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生徒詳細</title>
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .back-button {
+      margin-bottom: 20px;
+      padding: 8px 16px;
+      background-color: #666;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: #555;
+    }
+    .student-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .student-info h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    .info-item {
+      margin: 5px 0;
+    }
+    .info-label {
+      font-weight: bold;
+      color: #555;
+    }
+    .records-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .records-list {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .records-list h3 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .record-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+    }
+    .record-date {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 5px;
+    }
+    .record-content {
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .record-teacher {
+      color: #666;
+      font-size: 0.9em;
+      text-align: right;
+    }
+    .record-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      justify-content: flex-end;
+    }
+    .edit-button, .delete-button {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .edit-button {
+      background-color: #2196F3;
+      color: white;
+    }
+    .edit-button:hover {
+      background-color: #1976D2;
+    }
+    .delete-button {
+      background-color: #dc3545;
+      color: white;
+    }
+    .delete-button:hover {
+      background-color: #c82333;
+    }
+    .add-record-form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .add-record-form h3 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      min-height: 100px;
+      resize: vertical;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .add-button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .add-button:hover {
+      background-color: #45a049;
+    }
+    .edit-form {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+    .edit-form.active {
+      display: block;
+    }
+    .edit-form h3 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .cancel-button {
+      padding: 8px 16px;
+      background-color: #666;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .cancel-button:hover {
+      background-color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="back-button" onclick="location.href='index.html'">← 戻る</button>
+    
+    <div class="student-info">
+      <h2 id="student-name"></h2>
+      <div class="info-item">
+        <span class="info-label">学年：</span>
+        <span id="student-grade"></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">志望校：</span>
+        <span id="student-subject"></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">メモ：</span>
+        <span id="student-memo"></span>
+      </div>
+    </div>
+
+    <div class="records-container">
+      <div class="records-list">
+        <h3>指導記録一覧</h3>
+        <div id="records-list"></div>
+      </div>
+
+      <div class="add-record-form">
+        <h3>指導記録を追加</h3>
+        <div class="form-group">
+          <label for="record-content">指導内容</label>
+          <textarea id="record-content" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="record-teacher">担当講師</label>
+          <input type="text" id="record-teacher" required>
+        </div>
+        <button class="add-button" onclick="addRecord()">記録を追加</button>
+      </div>
+
+      <div class="edit-form" id="edit-form">
+        <h3>指導記録を編集</h3>
+        <div class="form-group">
+          <label for="edit-content">指導内容</label>
+          <textarea id="edit-content" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="edit-teacher">担当講師</label>
+          <input type="text" id="edit-teacher" required>
+        </div>
+        <div class="button-group">
+          <button class="add-button" onclick="updateRecord()">更新</button>
+          <button class="cancel-button" onclick="cancelEdit()">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="./student.js"></script>
+</body>
+</html>

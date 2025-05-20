@@ -1,0 +1,12 @@
+[
+  {
+    "schoolId": "naseva",
+    "password": "$2b$10$4bDgqOBG1sg8Cd7oRa74q.fQ4xfKzf4QrIWPuCiprg5PEeIHAjHpO",
+    "name": "ナセバ進学予備校"
+  },
+  {
+    "schoolId": "front",
+    "password": "$2b$10$WrzYGECP1xRdtCblJjSDAe/89pqTYAFxcaxLTmfL8YJmM/9DunCbm",
+    "name": "コンソメ塾"
+  }
+]
