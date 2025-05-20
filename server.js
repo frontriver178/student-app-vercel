@@ -1,12 +1,18 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const cookieParser = require('cookie-parser');
-const session = require('express-session');
-const bcrypt = require('bcrypt');
-const { createClient } = require('@supabase/supabase-js');
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import bcrypt from 'bcrypt';
+import { createClient } from '@supabase/supabase-js';
+import { fileURLToPath } from 'url';
+
 const app = express();
 const PORT = process.env.PORT || 3004;
+
+// __dirname polyfill for ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Supabaseクライアントの初期化
 const supabase = createClient(
@@ -492,4 +498,4 @@ app.listen(PORT, () => {
 });
 
 // Vercel用のエクスポート
-module.exports = app;
+export default app;
