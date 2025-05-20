@@ -4,13 +4,20 @@ const fs = require('fs');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
+const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 3004;
+
+// Supabaseクライアントの初期化
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
 // セッション設定
 app.use(cookieParser());
 app.use(session({
-  secret: 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -63,15 +70,20 @@ app.post('/auth/login', async (req, res) => {
   const { schoolId, password } = req.body;
   
   try {
-    console.log('POST /auth/login', { schoolId, password });
-    const schools = JSON.parse(fs.readFileSync('public/schools.json', 'utf8'));
-    console.log('Loaded schools:', schools);
-    const school = schools.find(s => s.schoolId === schoolId);
-    console.log('Matched school:', school);
-    if (!school) {
+    console.log('POST /auth/login', { schoolId });
+    
+    // Supabaseから学校データを取得
+    const { data: school, error } = await supabase
+      .from('schools')
+      .select('*')
+      .eq('schoolId', schoolId)
+      .single();
+
+    if (error || !school) {
       console.log('No matching school found');
       return res.status(400).send('ログインに失敗しました');
     }
+
     const passwordMatch = await bcrypt.compare(password, school.password);
     console.log('Password match:', passwordMatch);
     if (!passwordMatch) {
