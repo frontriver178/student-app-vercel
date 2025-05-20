@@ -43,20 +43,28 @@ addButton.onclick = async () => {
   }
 
   try {
+    console.log('送信データ:', { name, school_id: schoolId, password: '***' });
     const res = await fetch('/schools', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, school_id: schoolId, password })
     });
+
+    const data = await res.json();
+    console.log('レスポンス:', { status: res.status, data });
+
     if (res.ok) {
       successMessage.textContent = '塾アカウントを発行しました。';
       nameInput.value = idInput.value = pwInput.value = '';
       await loadSchools();
     } else {
-      const data = await res.json();
       errorMessage.textContent = data.error || '発行に失敗しました。';
+      if (data.details) {
+        console.error('エラー詳細:', data.details);
+      }
     }
   } catch (err) {
+    console.error('通信エラー:', err);
     errorMessage.textContent = '通信エラーが発生しました。';
   }
 };

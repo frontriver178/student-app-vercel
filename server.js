@@ -459,20 +459,55 @@ app.get('/schools', async (req, res) => {
 // 塾アカウント新規発行
 app.post('/schools', async (req, res) => {
   try {
+    console.log('POST /schools リクエストボディ:', req.body);
     const { school_id, password, name } = req.body;
+    
+    // バリデーション
     if (!school_id || !password || !name) {
+      console.log('バリデーションエラー:', { school_id, name, password: '***' });
       return res.status(400).json({ error: '全ての項目を入力してください' });
     }
+
+    // 既存の塾IDチェック
+    const { data: existingSchool, error: checkError } = await supabase
+      .from('schools')
+      .select('school_id')
+      .eq('school_id', school_id)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('既存塾チェックエラー:', checkError);
+      throw checkError;
+    }
+
+    if (existingSchool) {
+      return res.status(400).json({ error: '同じ塾IDが既に存在します' });
+    }
+
     // パスワードをハッシュ化
     const hash = await bcrypt.hash(password, 10);
+
+    // 新規塾を追加
     const { data, error } = await supabase
       .from('schools')
       .insert([{ school_id, password: hash, name }])
-      .select('school_id, name');
-    if (error) throw error;
-    res.json(data[0]);
+      .select('school_id, name')
+      .single();
+
+    if (error) {
+      console.error('Supabase挿入エラー:', error);
+      throw error;
+    }
+
+    console.log('塾アカウント作成成功:', { school_id: data.school_id, name: data.name });
+    res.json(data);
   } catch (error) {
-    res.status(500).json({ error: String(error) });
+    console.error('POST /schools エラー詳細:', error);
+    res.status(500).json({ 
+      error: '塾アカウントの発行に失敗しました',
+      details: String(error),
+      code: error.code
+    });
   }
 });
 
