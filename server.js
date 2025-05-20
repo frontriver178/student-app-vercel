@@ -32,12 +32,15 @@ app.use(express.static('public'));
 function ensureLoggedIn(req, res, next) {
   const cookies = cookie.parse(req.headers.cookie || '');
   const token = cookies.token;
+  console.log('ensureLoggedIn: token =', token);
   if (!token) return res.status(401).json({ error: '未ログイン' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
+    console.log('ensureLoggedIn: payload =', payload);
     req.schoolId = payload.schoolId;
     next();
   } catch (err) {
+    console.error('ensureLoggedIn: JWT verify error', err);
     return res.status(401).json({ error: '認証エラー' });
   }
 }
