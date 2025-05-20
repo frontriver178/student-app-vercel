@@ -128,24 +128,39 @@ app.get('/auth/logout', (req, res) => {
 // 生徒データ関連のエンドポイント
 app.get('/students', ensureLoggedIn, async (req, res) => {
   try {
+    console.log('GET /students called with schoolId:', req.schoolId);
     // req.schoolIdはschool_id（文字列）なので、まずschoolsテーブルからidを取得
     const { data: school, error: schoolError } = await supabase
       .from('schools')
       .select('id')
       .eq('school_id', req.schoolId)
       .maybeSingle();
+
+    console.log('Schools query result:', { school, error: schoolError });
+    
     if (schoolError || !school) {
+      console.error('School lookup error:', schoolError);
       return res.status(400).json({ error: '塾情報が見つかりません' });
     }
+    
     const schoolDbId = school.id;
+    console.log('Found school.id:', schoolDbId);
+    
     // studentsテーブルから該当塾の生徒を取得
     const { data: students, error } = await supabase
       .from('students')
       .select('*')
       .eq('school_id', schoolDbId);
-    if (error) throw error;
-    res.json(students);
+
+    console.log('Students query result:', { count: students?.length, error });
+    
+    if (error) {
+      console.error('Students lookup error:', error);
+      throw error;
+    }
+    res.json(students || []);
   } catch (error) {
+    console.error('GET /students error:', error);
     res.status(500).json({ error: String(error) });
   }
 });
